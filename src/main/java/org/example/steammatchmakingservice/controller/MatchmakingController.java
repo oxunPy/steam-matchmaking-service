@@ -1,29 +1,59 @@
 package org.example.steammatchmakingservice.controller;
 
-import org.example.steammatchmakingservice.dto.MatchmakingRequest;
+import org.example.steammatchmakingservice.dto.MatchmakingRequestDto;
+import org.example.steammatchmakingservice.game.GameMode;
+import org.example.steammatchmakingservice.response.MatchmakingResponse;
+import org.example.steammatchmakingservice.service.MatchmakingService;
 import org.example.steammatchmakingservice.service.kafka.MatchmakingProducerService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/steam-matchmaking")
 public class MatchmakingController {
     private final MatchmakingProducerService matchmakingProducer;
+    private final MatchmakingService matchmakingService;
 
-    public MatchmakingController(MatchmakingProducerService matchmakingProducer) {
+    public MatchmakingController(MatchmakingProducerService matchmakingProducer, MatchmakingService matchmakingService) {
         this.matchmakingProducer = matchmakingProducer;
+        this.matchmakingService = matchmakingService;
     }
 
-    @PostMapping("/request")
-    public void requestMatchmaking(@RequestParam String userId,
-                                   @RequestParam List<String> friends,
-                                   int maxPlayers) {
-        MatchmakingRequest request = new MatchmakingRequest(UUID.randomUUID().toString(), userId, friends, maxPlayers);
-        matchmakingProducer.sendMatchmakingRequest(request);
+    @PostMapping("/request-deathmatch")
+    public Mono<Void> requestMatchmakingDmatch(@RequestBody MatchmakingRequestDto payload) {
+        int maxPlayers = 1 + payload.friends().size();
+        if(maxPlayers > 10) {
+            return Mono.create(t -> MatchmakingResponse.builder()
+                    .status(MatchmakingResponse.Status.FAILED)
+                    .message("Max number of players is 10").build());
+        }
+
+        MatchmakingRequestDto request = new MatchmakingRequestDto(UUID.randomUUID().toString(), payload.mainPlayer(), GameMode.DEATHMATCH, payload.friends(), maxPlayers);
+        return matchmakingProducer.sendMatchmakingRequest(request);
+    }
+
+    @PostMapping("/request-competetive")
+    public Mono<Void> requestMatchmakingComp(@RequestBody MatchmakingRequestDto payload) {
+        int maxPlayers = 1 + payload.friends().size();
+
+        if(maxPlayers > 5) {
+            return Mono.create(t -> MatchmakingResponse.builder()
+                    .status(MatchmakingResponse.Status.FAILED)
+                    .message("Max number of players is 5").build());
+        }
+
+        MatchmakingRequestDto request = new MatchmakingRequestDto(UUID.randomUUID().toString(), payload.mainPlayer(), GameMode.COMPETETIVE, payload.friends(), maxPlayers);
+        return matchmakingProducer.sendMatchmakingRequest(request);
+    }
+
+
+    @PostMapping("/save-session")
+    public Mono<MatchmakingResponse> saveMatchSession(@RequestBody MatchmakingRequestDto payload) {
+
+        int maxPlayers = 1 + payload.friends().size();
+        MatchmakingRequestDto request = new MatchmakingRequestDto(UUID.randomUUID().toString(), payload.mainPlayer(), GameMode.COMPETETIVE, payload.friends(), maxPlayers);
+        return matchmakingService.createNewMatchmakingSession(request);
     }
 }

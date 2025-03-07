@@ -19,12 +19,12 @@ public class KafkaTopicConfig {
     @Bean
     public KafkaAdmin.NewTopics requests() {
         return new KafkaAdmin.NewTopics(
-                TopicBuilder.name(requestMatchmaking).build());
+                TopicBuilder.name(requestMatchmaking).partitions(1).replicas(2).build());
     }
 
     @Bean
     public KafkaAdmin.NewTopics replies() {
         return new KafkaAdmin.NewTopics(
-                TopicBuilder.name(replyMatchmaking).build());
+                TopicBuilder.name(replyMatchmaking).partitions(1).replicas(2).build());
     }
 }

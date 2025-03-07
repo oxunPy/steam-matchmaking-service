@@ -1,33 +1,57 @@
 package org.example.steammatchmakingservice.entity;
 
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import org.example.steammatchmakingservice.dto.SteamMatchmakingRequestDto;
+import org.springframework.beans.BeanUtils;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
-@Getter
-@Setter
-@AllArgsConstructor
-@NoArgsConstructor
-@Entity
 @Table(name = "matchmaking_requests")
-public class SteamMatchmakingRequest {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class SteamMatchmakingRequest extends SteamBaseEntity {
+    @Column("players")
+    private List<String> players;
 
-    private String playerId;
-    private int totalPlayers;
-    private int openSlots;
+    @Column("session_id")
+    private String sessionId;
 
-    @ElementCollection
-    @CollectionTable(name = "matchmaking_friends", joinColumns = @JoinColumn(name = "matchmaking_id"))
-    @Column(name = "friend_id")
-    private List<Long> friends;
+    public SteamMatchmakingRequest(UUID id, LocalDateTime createdAt, SessionStatus status, List<String> players, String sessionId) {
+        super(id, createdAt, status);
+        this.players = players;
+        this.sessionId = sessionId;
+    }
+    public SteamMatchmakingRequest() {
+        players = new ArrayList<>();
+    }
 
-    private LocalDateTime createdAt = LocalDateTime.now();
+    public SteamMatchmakingRequest(List<String> players, String sessionId) {
+        this.players = players;
+        this.sessionId = sessionId;
+    }
+
+    public String getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
+    }
+
+    public List<String> getPlayers() {
+        return players;
+    }
+
+    public void setPlayers(List<String> players) {
+        this.players = players;
+    }
+
+    public SteamMatchmakingRequestDto toDto() {
+        SteamMatchmakingRequestDto dto = new SteamMatchmakingRequestDto();
+        BeanUtils.copyProperties(this, dto);
+        dto.setSessionId(getSessionId());
+        return dto;
+    }
 }
