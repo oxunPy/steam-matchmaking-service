@@ -4,6 +4,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.example.steammatchmakingservice.dto.MatchmakingRequestDto;
+import org.example.steammatchmakingservice.game.NoteData;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -44,7 +45,7 @@ public class KafkaConsumerConfig {
     }
 
     @Bean
-    public Map<String, Object> consumerConfigMatchmakingRequest() {
+    public Map<String, Object> consumerConfigJsonDeserializer() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootStrapServers);
@@ -65,8 +66,13 @@ public class KafkaConsumerConfig {
     }
 
     @Bean
-    public ConsumerFactory<String, MatchmakingRequestDto> consumerFactoryMatchmakingRequest(@Qualifier("consumerConfigMatchmakingRequest") Map consumerMatchmakingRequestConfig) {
-        return new DefaultKafkaConsumerFactory<>(consumerMatchmakingRequestConfig);
+    public ConsumerFactory<String, MatchmakingRequestDto> consumerFactoryMatchmakingRequest(@Qualifier("consumerConfigJsonDeserializer") Map consumerConfig) {
+        return new DefaultKafkaConsumerFactory<>(consumerConfig);
+    }
+
+    @Bean
+    public ConsumerFactory<String, NoteData> consumerFactoryNoteData(@Qualifier("consumerConfigJsonDeserializer") Map consumerConfig) {
+        return new DefaultKafkaConsumerFactory<>(consumerConfig);
     }
 
     @Bean
@@ -86,6 +92,13 @@ public class KafkaConsumerConfig {
     @Bean
     public KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<String, MatchmakingRequestDto>> kafkaListenerContainerFactoryMatchmakingRequest(@Qualifier("consumerFactoryMatchmakingRequest") ConsumerFactory<String, MatchmakingRequestDto> cf) {
         ConcurrentKafkaListenerContainerFactory<String, MatchmakingRequestDto> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(cf);
+        return factory;
+    }
+
+    @Bean
+    public KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<String, NoteData>> kafkaListenerContainerFactoryNoteData(@Qualifier("consumerFactoryNoteData") ConsumerFactory<String, NoteData> cf) {
+        ConcurrentKafkaListenerContainerFactory<String, NoteData> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(cf);
         return factory;
     }

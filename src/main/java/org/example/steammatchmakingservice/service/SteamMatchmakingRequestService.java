@@ -4,7 +4,6 @@ import org.example.steammatchmakingservice.dto.SteamMatchmakingRequestDto;
 import org.example.steammatchmakingservice.entity.SteamBaseEntity;
 import org.example.steammatchmakingservice.entity.SteamMatchmakingRequest;
 import org.example.steammatchmakingservice.repository.MatchmakingRequestR2dbcRepository;
-import org.example.steammatchmakingservice.repository.MatchmakingSessionR2dbcRepository;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

@@ -7,7 +7,6 @@ import org.example.steammatchmakingservice.entity.SteamBaseEntity;
 import org.example.steammatchmakingservice.entity.SteamMatchmakingRequest;
 import org.example.steammatchmakingservice.entity.SteamMatchmakingSession;
 import org.example.steammatchmakingservice.game.GameMode;
-import org.example.steammatchmakingservice.repository.MatchmakingRedisRepository;
 import org.example.steammatchmakingservice.response.MatchmakingResponse;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -21,19 +20,19 @@ import java.util.List;
 public class MatchmakingService {
     private final ReactiveRedisTemplate<String, StoredMatchRequestDto> redisSessionRequestsTemplate;            // sessionId - List<Requests>
     private final ReactiveRedisTemplate<String, String> redisRequestSessionTemplate;                    // requestId - sessionId
-    private final MatchmakingRedisRepository redisRepository;
-    private final Duration FINDING_MATCH_TIMEOUT = Duration.ofMinutes(20);
-    private final Duration EXPIRING_PAIR_TIMEOUT = Duration.ofMinutes(40);
+    private final Duration FINDING_MATCH_TIMEOUT = Duration.ofMinutes(2);
+    private final Duration EXPIRING_PAIR_TIMEOUT = Duration.ofMinutes(2);
 
     private final SteamMatchmakingRequestService steamMatchmakingRequestService;
     private final SteamMatchmakingSessionService steamMatchmakingSessionService;
 
-    public MatchmakingService(ReactiveRedisTemplate<String, StoredMatchRequestDto> redisSessionRequestsTemplate, ReactiveRedisTemplate<String, String> requestSessionTemplate,
-                              ReactiveRedisTemplate<String, String> redisRequestSessionTemplate, MatchmakingRedisRepository redisRepository,
-                              SteamMatchmakingRequestService steamMatchmakingRequestService, SteamMatchmakingSessionService steamMatchmakingSessionService) {
+    public MatchmakingService(ReactiveRedisTemplate<String, StoredMatchRequestDto> redisSessionRequestsTemplate,
+                              ReactiveRedisTemplate<String, String> requestSessionTemplate,
+                              ReactiveRedisTemplate<String, String> redisRequestSessionTemplate,
+                              SteamMatchmakingRequestService steamMatchmakingRequestService,
+                              SteamMatchmakingSessionService steamMatchmakingSessionService) {
         this.redisSessionRequestsTemplate = redisSessionRequestsTemplate;
         this.redisRequestSessionTemplate = redisRequestSessionTemplate;
-        this.redisRepository = redisRepository;
         this.steamMatchmakingRequestService = steamMatchmakingRequestService;
         this.steamMatchmakingSessionService = steamMatchmakingSessionService;
     }
@@ -57,7 +56,6 @@ public class MatchmakingService {
                             .then(updateMatchSessionInRedis(updatedSession.getId().toString(), request))
                             .then(notifyMatchmakingUpdate(request.requestId()));
                 })
-//                .switchIfEmpty(createNewMatchmakingSession(request).then())
                 .then();
     }
 

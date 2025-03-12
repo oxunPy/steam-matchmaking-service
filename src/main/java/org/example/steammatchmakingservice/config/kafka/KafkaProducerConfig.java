@@ -4,6 +4,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.example.steammatchmakingservice.dto.MatchmakingRequestDto;
+import org.example.steammatchmakingservice.game.NoteData;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -41,7 +42,7 @@ public class KafkaProducerConfig {
     }
 
     @Bean
-    public Map<String, Object> producerConfigMatchmakingRequest() {
+    public Map<String, Object> producerConfigJsonSerializer() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
@@ -60,8 +61,13 @@ public class KafkaProducerConfig {
     }
 
     @Bean
-    public ProducerFactory<String, MatchmakingRequestDto> producerFactoryMatchmakingRequest(@Qualifier("producerConfigMatchmakingRequest") Map producerConfigMatchReq) {
-        return new DefaultKafkaProducerFactory<String, MatchmakingRequestDto>(producerConfigMatchReq);
+    public ProducerFactory<String, MatchmakingRequestDto> producerFactoryMatchmakingRequest(@Qualifier("producerConfigJsonSerializer") Map producerConfig) {
+        return new DefaultKafkaProducerFactory<String, MatchmakingRequestDto>(producerConfig);
+    }
+
+    @Bean
+    public ProducerFactory<String, NoteData> producerFactoryNoteData(@Qualifier("producerConfigJsonSerializer") Map producerConfig) {
+        return new DefaultKafkaProducerFactory<String, NoteData>(producerConfig);
     }
 
     @Bean
@@ -76,6 +82,11 @@ public class KafkaProducerConfig {
 
     @Bean
     public KafkaTemplate<String, MatchmakingRequestDto> kafkaTemplateMatchReq(@Qualifier("producerFactoryMatchmakingRequest") ProducerFactory<String, MatchmakingRequestDto> pf) {
+        return new KafkaTemplate<>(pf);
+    }
+
+    @Bean
+    public KafkaTemplate<String, NoteData> kafkaTemplateNote(@Qualifier("producerFactoryNoteData") ProducerFactory<String, NoteData> pf) {
         return new KafkaTemplate<>(pf);
     }
 }

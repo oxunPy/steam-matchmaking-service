@@ -15,11 +15,15 @@ public class KafkaTopicConfig {
 
     @Value("${kafka.topic.request.matchmaking}")
     private String requestMatchmaking;
+    @Value("${kafka.topic.request.notification}")
+    private String requestNotification;
+
 
     @Bean
     public KafkaAdmin.NewTopics requests() {
         return new KafkaAdmin.NewTopics(
-                TopicBuilder.name(requestMatchmaking).partitions(1).replicas(2).build());
+                TopicBuilder.name(requestMatchmaking).partitions(1).replicas(2).build(),
+                TopicBuilder.name(requestMatchmaking).partitions(3).replicas(2).build());
     }
 
     @Bean
