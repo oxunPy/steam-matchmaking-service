@@ -1,5 +1,10 @@
 package org.example.steammatchmakingservice.handler;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.steammatchmakingservice.game.AcceptInvitation;
+import org.example.steammatchmakingservice.game.InvitationFriend;
 import org.example.steammatchmakingservice.game.NoteData;
 import org.example.steammatchmakingservice.service.RedisSocketSessionService;
 import org.example.steammatchmakingservice.service.kafka.KafkaMatchmakingProducer;
@@ -32,49 +37,61 @@ public class ReactiveWebSocketHandler implements WebSocketHandler {
     @Override
     public Mono<Void> handle(WebSocketSession session) {
 
-        URI uri = session.getHandshakeInfo().getUri();
-        System.out.println(uri.getQuery());
         System.out.println("Socket connecting.....");
-
-        // 1.Establish connection
-        if(uri.getQuery().contains("ws/match/connect")) {
-            // Register user sink
-            Map<String, String> queryParams = parseQueryParams(uri);
-            String username = queryParams.get("username");
+        URI uri = session.getHandshakeInfo().getUri();
+        Map<String, String> queryParams = parseQueryParams(uri);
+        String username = queryParams.get("username");
+        if(username != null) {
+            // Register user webSocket session as Sink
             redisSocketSessionService.registerUserSink(username);
-        }
 
-        // 2. Handle messages
-        else {
-            Map<String, String> queryParams = parseQueryParams(uri);
-            String username = queryParams.get("username");
-            String sessionId = queryParams.get("session");
-            if(username != null && sessionId != null) {
+            Flux<Void> incomingMessages = session.receive()
+                    .map(socket -> socket.getPayloadAsText())
+                    .flatMap(message -> {
+                        if (message != null && !message.trim().isEmpty()) {
+                            // send these messages to all other connected users
+                            try {
+                                JsonNode jsonNode = new ObjectMapper().readTree(message);
+                                String action = jsonNode.get("action").asText();
 
-                Flux<Void> incomingMessages = session.receive()
-                        .map(socket -> socket.getPayloadAsText())
-                        .flatMap(message -> {
-                            if(message != null && !message.trim().isEmpty()) {
-                                // send this messages to all other connected users
-                                NoteData noteData = new NoteData(username, sessionId, message);
-                                return kafkaProducer.sendMatchmakingNotification(noteData);
+                                if(action.equals("invite")) {
+                                    String fromPlayer = jsonNode.get("from").asText();
+                                    String toPlayer = jsonNode.get("to").asText();
+                                    return kafkaProducer.sendFriendInvitation(new InvitationFriend(fromPlayer, toPlayer));
+                                }
+
+                                if(action.equals("accept")) {
+                                    String accPlayer = jsonNode.get("accPlayer").asText();
+                                    boolean agree = jsonNode.get("agree").asBoolean();
+                                    return kafkaProducer.sendAcceptInvitation(new AcceptInvitation(accPlayer, agree));
+                                }
+
+                                if(action.equals("notify")) {
+                                    String fromPlayer = jsonNode.get("from").asText();
+                                    String otherPlayers = jsonNode.get("otherPlayers").asText();
+                                    String info = jsonNode.get("info").asText();
+                                    return kafkaProducer.sendMatchmakingNotification(new NoteData(fromPlayer, Arrays.asList(otherPlayers.split(",")), info));
+                                }
+
+                            } catch (JsonProcessingException e) {
+                                return Mono.error(new RuntimeException("Invalid JSON message: " + message));
                             }
+                        }
 
-                            return Mono.empty();
-                        });
+                        return Mono.empty();
+                    });
 
-                // Listen for messages sent via the Sink
-                Flux<WebSocketMessage> outgoingMessages = redisSocketSessionService.getUserSink(username)
-                        .asFlux()
-                        .map(session::textMessage);
+            // Listen for messages sent via the Sink
+            Flux<WebSocketMessage> outgoingMessages = redisSocketSessionService.getUserSink(username)
+                    .asFlux()
+                    .map(session::textMessage);
 
-                return session.send(outgoingMessages)
-                        .and(incomingMessages)
-                        .doFinally(signalType -> {
-                            redisSocketSessionService.removeSession(username).then();
-                            redisSocketSessionService.removeUserSink(username);
-                        });
-            }
+            return session.send(outgoingMessages)
+                    .and(incomingMessages)
+                    .doFinally(signalType -> {
+                        redisSocketSessionService.removeSession(username).then();
+                        redisSocketSessionService.removeUserSink(username);
+                    });
         }
 
         return Mono.empty();

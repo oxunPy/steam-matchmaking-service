@@ -17,13 +17,19 @@ public class KafkaTopicConfig {
     private String requestMatchmaking;
     @Value("${kafka.topic.request.notification}")
     private String requestNotification;
-
+    @Value("${kafka.topic.request.invite-friend}")
+    private String requestInviteFriend;
+    @Value("${kafka.topic.request.accept-invite}")
+    private String requestAcceptInvite;
 
     @Bean
     public KafkaAdmin.NewTopics requests() {
         return new KafkaAdmin.NewTopics(
                 TopicBuilder.name(requestMatchmaking).partitions(1).replicas(2).build(),
-                TopicBuilder.name(requestMatchmaking).partitions(3).replicas(2).build());
+                TopicBuilder.name(requestMatchmaking).partitions(3).replicas(2).build(),
+                TopicBuilder.name(requestInviteFriend).partitions(3).replicas(2).build(),
+                TopicBuilder.name(requestAcceptInvite).partitions(3).replicas(2).build()
+                );
     }
 
     @Bean

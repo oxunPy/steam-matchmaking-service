@@ -4,6 +4,8 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.example.steammatchmakingservice.dto.MatchmakingRequestDto;
+import org.example.steammatchmakingservice.game.AcceptInvitation;
+import org.example.steammatchmakingservice.game.InvitationFriend;
 import org.example.steammatchmakingservice.game.NoteData;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -76,6 +78,16 @@ public class KafkaConsumerConfig {
     }
 
     @Bean
+    public ConsumerFactory<String, InvitationFriend> consumerFactoryInviteFriend(@Qualifier("consumerConfigJsonDeserializer") Map consumerConfig) {
+        return new DefaultKafkaConsumerFactory<>(consumerConfig);
+    }
+
+    @Bean
+    public ConsumerFactory<String, AcceptInvitation> consumerFactoryAcceptInvitation(@Qualifier("consumerConfigJsonDeserializer") Map consumerConfig) {
+        return new DefaultKafkaConsumerFactory<>(consumerConfig);
+    }
+
+    @Bean
     public KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<String, String>> kafkaListenerContainerFactoryString(@Qualifier("consumerFactoryString") ConsumerFactory<String, String> cf) {
         ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(cf);
@@ -99,6 +111,20 @@ public class KafkaConsumerConfig {
     @Bean
     public KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<String, NoteData>> kafkaListenerContainerFactoryNoteData(@Qualifier("consumerFactoryNoteData") ConsumerFactory<String, NoteData> cf) {
         ConcurrentKafkaListenerContainerFactory<String, NoteData> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(cf);
+        return factory;
+    }
+
+    @Bean
+    public KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<String, InvitationFriend>> kafkaListenerContainerFactoryInvitationFriend(@Qualifier("consumerFactoryInviteFriend") ConsumerFactory<String, InvitationFriend> cf) {
+        ConcurrentKafkaListenerContainerFactory<String, InvitationFriend> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(cf);
+        return factory;
+    }
+
+    @Bean
+    public KafkaListenerContainerFactory<ConcurrentMessageListenerContainer<String, AcceptInvitation>> kafkaListenerContainerFactoryAcceptInvitation(@Qualifier("consumerFactoryAcceptInvitation") ConsumerFactory<String, AcceptInvitation> cf) {
+        ConcurrentKafkaListenerContainerFactory<String, AcceptInvitation> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(cf);
         return factory;
     }

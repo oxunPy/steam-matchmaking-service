@@ -1,6 +1,8 @@
 package org.example.steammatchmakingservice.service.kafka;
 
 import org.example.steammatchmakingservice.dto.MatchmakingRequestDto;
+import org.example.steammatchmakingservice.game.AcceptInvitation;
+import org.example.steammatchmakingservice.game.InvitationFriend;
 import org.example.steammatchmakingservice.game.NoteData;
 import org.example.steammatchmakingservice.service.MatchmakingService;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -28,6 +30,17 @@ public class KafkaMatchmakingConsumer {
     @KafkaListener(topics = {"kafka.topic.request.notification"}, groupId = "${kafka.consumer.matchmaking.group_id}", containerFactory = "kafkaListenerContainerFactoryNoteData")
     public void listenNoteDataFromUser(NoteData note) {
         System.out.println(note);
+    }
+
+
+    @KafkaListener(topics = {"${kafka.topic.request.invite-friend}"}, groupId = "${kafka.consumer.matchmaking.group_id}", containerFactory = "kafkaListenerContainerFactoryInvitationFriend")
+    public void listenFriendInvitation(InvitationFriend invitationReq) {
+        System.out.println(invitationReq);
+    }
+
+    @KafkaListener(topics = {"${kafka.topic.request.accept-invite}"}, groupId = "${kafka.consumer.matchmaking.group_id}", containerFactory = "kafkaListenerContainerFactoryAcceptInvitation")
+    public void listenAcceptInvitation(AcceptInvitation acceptInvitation) {
+        System.out.println(acceptInvitation);
     }
 }
 

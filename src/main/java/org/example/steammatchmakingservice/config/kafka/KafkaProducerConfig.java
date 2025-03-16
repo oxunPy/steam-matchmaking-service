@@ -4,6 +4,8 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.example.steammatchmakingservice.dto.MatchmakingRequestDto;
+import org.example.steammatchmakingservice.game.AcceptInvitation;
+import org.example.steammatchmakingservice.game.InvitationFriend;
 import org.example.steammatchmakingservice.game.NoteData;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -71,6 +73,17 @@ public class KafkaProducerConfig {
     }
 
     @Bean
+    public ProducerFactory<String, InvitationFriend> producerFactoryInvitationFriend(@Qualifier("producerConfigJsonSerializer") Map producerConfig) {
+        return new DefaultKafkaProducerFactory<String, InvitationFriend>(producerConfig);
+    }
+
+    @Bean
+    public ProducerFactory<String, AcceptInvitation> producerFactoryAcceptInvitation(@Qualifier("producerConfigJsonSerializer") Map producerConfig) {
+        return new DefaultKafkaProducerFactory<String, AcceptInvitation>(producerConfig);
+    }
+
+
+    @Bean
     public KafkaTemplate<String, String> kafkaTemplateString(@Qualifier("producerFactoryString") ProducerFactory<String, String> pf) {
         return new KafkaTemplate<>(pf);
     }
@@ -87,6 +100,16 @@ public class KafkaProducerConfig {
 
     @Bean
     public KafkaTemplate<String, NoteData> kafkaTemplateNote(@Qualifier("producerFactoryNoteData") ProducerFactory<String, NoteData> pf) {
+        return new KafkaTemplate<>(pf);
+    }
+
+    @Bean
+    public KafkaTemplate<String, InvitationFriend> kafkaTemplateInvitationFriend(@Qualifier("producerFactoryInvitationFriend") ProducerFactory<String, InvitationFriend> pf) {
+        return new KafkaTemplate<>(pf);
+    }
+
+    @Bean
+    public KafkaTemplate<String, AcceptInvitation> kafkaTemplateAcceptInvitation(@Qualifier("producerFactoryAcceptInvitation") ProducerFactory<String, AcceptInvitation> pf) {
         return new KafkaTemplate<>(pf);
     }
 }
