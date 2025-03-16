@@ -4,7 +4,7 @@ import org.example.steammatchmakingservice.dto.MatchmakingRequestDto;
 import org.example.steammatchmakingservice.game.GameMode;
 import org.example.steammatchmakingservice.response.MatchmakingResponse;
 import org.example.steammatchmakingservice.service.MatchmakingService;
-import org.example.steammatchmakingservice.service.RedisSocketSessionService;
+import org.example.steammatchmakingservice.redis.RedisSocketSessionService;
 import org.example.steammatchmakingservice.service.kafka.KafkaMatchmakingProducer;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

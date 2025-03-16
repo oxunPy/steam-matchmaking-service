@@ -1,4 +1,4 @@
-package org.example.steammatchmakingservice.service;
+package org.example.steammatchmakingservice.redis;
 
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -34,12 +34,12 @@ public class RedisSocketSessionService {
 
     // Register a sink for the user to send/recieve payload
     public void registerUserSink(String username) {
-        notificationSinks.computeIfAbsent(username, key -> Sinks.many().multicast().directBestEffort());
+        notificationSinks.computeIfAbsent(username.toLowerCase(), key -> Sinks.many().multicast().directBestEffort());
     }
 
     // Get user's sink for payload sending
     public Sinks.Many<String> getUserSink(String username) {
-        return notificationSinks.get(username);
+        return notificationSinks.get(username.toLowerCase());
     }
 
     // Send message to a user via their sink

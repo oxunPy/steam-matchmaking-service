@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.steammatchmakingservice.game.AcceptInvitation;
 import org.example.steammatchmakingservice.game.InvitationFriend;
 import org.example.steammatchmakingservice.game.NoteData;
-import org.example.steammatchmakingservice.service.RedisSocketSessionService;
+import org.example.steammatchmakingservice.redis.RedisSocketSessionService;
 import org.example.steammatchmakingservice.service.kafka.KafkaMatchmakingProducer;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.socket.WebSocketHandler;
