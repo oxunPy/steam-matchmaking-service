@@ -13,11 +13,11 @@ public class RedisSocketSessionService {
 
     private static final String MATCHMAKING_SESSION_PREFIX = "matchmaking:session:";
     private final ReactiveRedisTemplate<String, String> redisTemplate;
-    private final Map<String, Sinks.Many<String>> notificationSinks;
+    private final Map<String, Sinks.Many<String>> userSinks;
 
     public RedisSocketSessionService(ReactiveRedisTemplate<String, String> redisTemplate) {
         this.redisTemplate = redisTemplate;
-        notificationSinks = new ConcurrentHashMap<>();
+        userSinks = new ConcurrentHashMap<>();
     }
 
     // Save session for each user
@@ -34,17 +34,17 @@ public class RedisSocketSessionService {
 
     // Register a sink for the user to send/recieve payload
     public void registerUserSink(String username) {
-        notificationSinks.computeIfAbsent(username.toLowerCase(), key -> Sinks.many().multicast().directBestEffort());
+        userSinks.computeIfAbsent(username.toLowerCase(), key -> Sinks.many().multicast().directBestEffort());
     }
 
     // Get user's sink for payload sending
     public Sinks.Many<String> getUserSink(String username) {
-        return notificationSinks.get(username.toLowerCase());
+        return userSinks.get(username.toLowerCase());
     }
 
     // Send message to a user via their sink
     public Mono<Void> sendMessageToUser(String username, String message) {
-        Sinks.Many<String> sink = notificationSinks.get(username);
+        Sinks.Many<String> sink = userSinks.get(username);
         if(sink != null) {
             return Mono.fromRunnable(() -> sink.tryEmitNext(message));
         }
@@ -59,10 +59,10 @@ public class RedisSocketSessionService {
 
     // Remove user sinks when user disconnects
     public Mono<Void> removeUserSink(String username) {
-        return Mono.fromRunnable(() -> notificationSinks.remove(username));
+        return Mono.fromRunnable(() -> userSinks.remove(username));
     }
 
     public int getActiveConnections() {
-        return notificationSinks.size();
+        return userSinks.size();
     }
 }

@@ -63,7 +63,7 @@ public class ReactiveWebSocketHandler implements WebSocketHandler {
                                 if(action.equals("accept")) {
                                     String accPlayer = jsonNode.get("accPlayer").asText();
                                     boolean agree = jsonNode.get("agree").asBoolean();
-                                    return kafkaProducer.sendAcceptInvitation(new AcceptInvitation(accPlayer, agree));
+                                    return kafkaProducer.sendAcceptInvitation(new AcceptInvitation(username, accPlayer, agree));
                                 }
 
                                 if(action.equals("notify")) {

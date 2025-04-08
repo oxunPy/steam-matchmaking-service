@@ -37,6 +37,7 @@ public class ReactiveRedisPublisher {
         return redisTemplate.opsForStream()
                 .add(ObjectRecord.create(ACCEPT_INVITE_MSG_STREAM, Map.of(
                     "senderUsername", accInv.senderUsername(),
+                    "acceptorUsername", accInv.acceptorUsername(),
                     "accepted",  String.valueOf(accInv.accepted())
                 )))
                 .doOnSuccess(recordId -> System.out.println("✅ Message published to Redis Stream: " + recordId))

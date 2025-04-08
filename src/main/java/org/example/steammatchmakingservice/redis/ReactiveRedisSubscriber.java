@@ -1,6 +1,7 @@
 package org.example.steammatchmakingservice.redis;
 
-import org.springframework.beans.factory.annotation.Qualifier;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.connection.stream.MapRecord;
 import org.springframework.data.redis.connection.stream.StreamOffset;
@@ -8,6 +9,10 @@ import org.springframework.data.redis.stream.StreamReceiver;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
+
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.example.steammatchmakingservice.redis.ReactiveRedisPublisher.ACCEPT_INVITE_MSG_STREAM;
 import static org.example.steammatchmakingservice.redis.ReactiveRedisPublisher.INVITE_MSG_STREAM;
@@ -17,11 +22,14 @@ public class ReactiveRedisSubscriber {
 
     private final StreamReceiver<String, MapRecord<String, String, String>> streamReceiver;
     private final RedisSocketSessionService redisSocketSessionService;
+    private final ObjectMapper objectMapper;
 
     public ReactiveRedisSubscriber(ReactiveRedisConnectionFactory factory,
-                                   RedisSocketSessionService redisSocketSessionService) {
+                                   RedisSocketSessionService redisSocketSessionService,
+                                   ObjectMapper objectMapper) {
         this.streamReceiver = StreamReceiver.create(factory);
         this.redisSocketSessionService = redisSocketSessionService;
+        this.objectMapper = objectMapper;
     }
 
     public void startListeningInviteMsg() {
@@ -33,7 +41,16 @@ public class ReactiveRedisSubscriber {
                     return Mono.defer(() -> {
                         Sinks.Many<String> friendSink = redisSocketSessionService.getUserSink(receiverUsername);
                         if(friendSink != null) {
-                            friendSink.tryEmitNext(senderUsername + " has invited you to play matchmaking!");
+                            Map<String, Object> jsonMap = new HashMap<>();
+                            jsonMap.put("senderUsername", senderUsername);
+                            jsonMap.put("actionResp", "invite");
+                            jsonMap.put("msg", senderUsername + " has invited you to play matchmaking!");
+
+                            try {
+                                friendSink.tryEmitNext(objectMapper.writeValueAsString(jsonMap));
+                            } catch (JsonProcessingException e) {
+                                throw new RuntimeException(e);
+                            }
                         }
                         return Mono.empty();
                     });
@@ -46,12 +63,24 @@ public class ReactiveRedisSubscriber {
         streamReceiver.receive(StreamOffset.fromStart(ACCEPT_INVITE_MSG_STREAM))
                 .flatMap(record -> {
                     String senderUsername = record.getValue().get("senderUsername");
+                    String acceptorUsername = record.getValue().get("acceptorUsername");
                     boolean accepted = Boolean.parseBoolean(record.getValue().get("accepted"));
 
                     return Mono.defer(() -> {
                         Sinks.Many<String> friendSink = redisSocketSessionService.getUserSink(senderUsername);
                         if(friendSink != null) {
-                            friendSink.tryEmitNext(accepted ? "Your friend has accepted the invitation!" : "Not accepted!");
+                            Map<String, Object> jsonMap = new HashMap<>();
+                            jsonMap.put("accepted", accepted);
+                            jsonMap.put("acceptorUsername", acceptorUsername);
+                            jsonMap.put("actionResp", "accept");
+                            jsonMap.put("msg", (accepted ? "Your friend " + acceptorUsername + " has accepted the invitation!" : "Not accepted!"));
+
+                            try {
+                                friendSink.tryEmitNext(objectMapper.writeValueAsString(jsonMap));
+                            } catch (JsonProcessingException e) {
+                                throw new RuntimeException(e);
+                            }
+
                         }
                         return Mono.empty();
                     });
